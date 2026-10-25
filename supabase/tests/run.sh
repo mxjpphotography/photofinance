@@ -27,9 +27,13 @@ for f in supabase/tests/[1-9][0-9]_*.sql; do
   "${PSQL[@]}" -d "$DB" -f "$f"
 done
 
-if [ -x supabase/tests/concurrency.sh ]; then
-  echo "tests: concurrency.sh"
-  DB="$DB" supabase/tests/concurrency.sh
+# Run through bash, so a missing executable bit (e.g. after a checkout on
+# Windows) can neither fail nor silently skip this test.
+if [ ! -f supabase/tests/concurrency.sh ]; then
+  echo "FAIL - supabase/tests/concurrency.sh is missing"
+  exit 1
 fi
+echo "tests: concurrency.sh"
+DB="$DB" bash supabase/tests/concurrency.sh
 
 echo "ALL SQL TESTS PASSED"
