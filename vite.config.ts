@@ -24,5 +24,4 @@ export default defineConfig({
       workbox: { navigateFallbackDenylist: [/^\/rest\//, /^\/auth\//] },
     }),
   ],
-  test: { environment: "node", include: ["src/**/*.test.ts"] },
 });
