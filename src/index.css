@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+/* Design tokens. Green = income / positive, red = expense / negative,
+   everything else neutral. Colours were chosen for WCAG AA contrast on white. */
+@theme {
+  --color-income: #15803d;
+  --color-income-soft: #dcfce7;
+  --color-expense: #b91c1c;
+  --color-expense-soft: #fee2e2;
+  --color-brand: #1f2937;
+  --color-brand-hover: #111827;
+  --color-surface: #ffffff;
+  --color-page: #f8fafc;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+html {
+  background: var(--color-page);
+  color: #111827;
+  font-family: var(--font-sans);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+/* Touch-friendly targets and a clearly visible keyboard focus. */
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
