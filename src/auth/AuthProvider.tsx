@@ -48,8 +48,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [access, setAccess] = useState<Access | null>(null);
 
   const applySession = useCallback(async (next: Session | null) => {
+    // Load the access row FIRST and publish session and access together.
+    // Publishing the session alone would briefly look like "signed in, status
+    // unknown" and the guards would send an approved user to the pending page.
+    const nextAccess = next ? await loadAccess(next.user.id) : null;
+    setAccess(nextAccess);
     setSession(next);
-    setAccess(next ? await loadAccess(next.user.id) : null);
     setLoading(false);
   }, []);
 

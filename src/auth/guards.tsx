@@ -18,11 +18,16 @@ export function PublicOnly() {
   return <Outlet />;
 }
 
-/** Requires a session but not approval (the pending / blocked screens). */
+/**
+ * For the pending / blocked screens: requires a session but not approval.
+ * An approved user who ends up here (for example after an admin approved the
+ * account) is sent on to the app.
+ */
 export function RequireSession() {
-  const { loading, session } = useAuth();
+  const { loading, session, status } = useAuth();
   if (loading) return <FullScreenMessage text={de.common.loading} />;
   if (!session) return <Navigate to="/login" replace />;
+  if (status === "approved") return <Navigate to="/" replace />;
   return <Outlet />;
 }
 
