@@ -37,6 +37,19 @@ Members read other people's equipment only through `rental_offers`
 note). Purchase value and private data are not part of it. Items of blocked
 owners, inactive listings and unavailable equipment are hidden.
 
+## Screens (`/leihen`)
+
+- **Angebote**: search other members' offers by text, category and period; with a
+  period the free units are shown. Items go into one request.
+- **Meine Anfragen**: requests grouped by request, with owner and answer; pending
+  items can be withdrawn, accepted ones cancelled.
+- **Eingehende Anfragen**: items for the person's own equipment; accept or decline
+  with an optional note, cancel an accepted one.
+
+The buttons only mirror the lifecycle above (`src/lib/rentals.ts`); the database
+trigger is what actually enforces it. Capacity failures (`23P01`) are shown as a
+German message.
+
 ## Not implemented (open business rules)
 
 Prices, deposit, payment, hand-over, return and fees. The schema leaves room

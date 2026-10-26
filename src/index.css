@@ -38,3 +38,19 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Month groups in the chart are keyboard-focusable links. */
+.pf-month {
+  outline: none;
+}
+.pf-month .pf-focus {
+  stroke: transparent;
+  stroke-width: 2;
+}
+.pf-month:hover .pf-focus {
+  stroke: #9ca3af;
+}
+.pf-month:focus-visible .pf-focus {
+  stroke: #2563eb;
+  stroke-width: 3;
+}

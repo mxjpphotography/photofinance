@@ -1,10 +1,15 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { PublicOnly, RequireApproved, RequireSession } from "./auth/guards";
-import { NotAvailableYet } from "./components/ui";
 import { AppLayout } from "./layout/AppLayout";
 import { de } from "./lib/de";
 import { isSupabaseConfigured } from "./lib/supabase";
 import { ForgotPasswordPage, LoginPage, PendingPage, RegisterPage, SetNewPasswordPage } from "./pages/AuthPages";
+import EquipmentPage from "./pages/EquipmentPage";
+import FinancePage from "./pages/FinancePage";
+import JobsPage from "./pages/JobsPage";
+import OverviewPage from "./pages/OverviewPage";
+import RentalsPage from "./pages/RentalsPage";
+import SettingsPage from "./pages/SettingsPage";
 
 function MissingConfig() {
   return (
@@ -16,9 +21,6 @@ function MissingConfig() {
     </div>
   );
 }
-
-const placeholder = (title: string, text: string) => <NotAvailableYet title={title} text={text} />;
-const later = `${de.common.notAvailableYet} ${de.common.notAvailableHint}`;
 
 export default function App() {
   if (!isSupabaseConfigured) return <MissingConfig />;
@@ -41,12 +43,12 @@ export default function App() {
 
       <Route element={<RequireApproved />}>
         <Route element={<AppLayout />}>
-          <Route index element={placeholder(de.nav.overview, de.overview.intro)} />
-          <Route path="finanzen" element={placeholder(de.nav.finance, later)} />
-          <Route path="jobs" element={placeholder(de.nav.jobs, later)} />
-          <Route path="equipment" element={placeholder(de.nav.equipment, later)} />
-          <Route path="leihen" element={placeholder(de.nav.rentals, later)} />
-          <Route path="einstellungen" element={placeholder(de.nav.settings, later)} />
+          <Route index element={<OverviewPage />} />
+          <Route path="finanzen" element={<FinancePage />} />
+          <Route path="jobs" element={<JobsPage />} />
+          <Route path="equipment" element={<EquipmentPage />} />
+          <Route path="leihen" element={<RentalsPage />} />
+          <Route path="einstellungen" element={<SettingsPage />} />
         </Route>
       </Route>
 

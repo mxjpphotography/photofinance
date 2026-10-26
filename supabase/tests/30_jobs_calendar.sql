@@ -7,26 +7,27 @@ update public.user_settings set target_hourly_rate = 50, tax_rate = 0.20, reserv
   billable_hours_per_month = 100 where user_id = auth.uid();
 
 -- Calculation --------------------------------------------------------------------
--- H = 4 + 6 + 2 = 12 h, K = 20 + 30 = 50
--- price = (12 * 50 + 50) / (1 - 0.30) = 928.57
+-- Rate is PRE-TAX, no VAT. H = 4 + 6 + 2 = 12 h, K = 20 + 30 = 50
+-- price = 12 * 50 + 50 = 650, profit = 600, set aside = 600 * 0.30 = 180
 insert into public.jobs (id, name, client, start_date, shooting_hours, editing_hours, organisation_hours,
                          travel_costs, other_costs)
 values ('11111111-0000-0000-0000-000000000001', 'Hochzeit Meier', 'Meier', '2027-03-10', 4, 6, 2, 20, 30);
 
 select t.eq((select total_hours::text from public.calculate_job_quote('11111111-0000-0000-0000-000000000001')), '12.00', 'total planned working time');
 select t.eq((select planned_costs::text from public.calculate_job_quote('11111111-0000-0000-0000-000000000001')), '50.00', 'planned internal costs');
-select t.eq((select recommended_price::text from public.calculate_job_quote('11111111-0000-0000-0000-000000000001')), '928.57', 'recommended price');
-select t.eq((select taxes_and_reserves::text from public.calculate_job_quote('11111111-0000-0000-0000-000000000001')), '278.57', 'taxes and reserves are a share of the price (30%)');
-select t.eq((select expected_profit::text from public.calculate_job_quote('11111111-0000-0000-0000-000000000001')), '600.00', 'expected profit equals hours x hourly rate');
+select t.eq((select recommended_price::text from public.calculate_job_quote('11111111-0000-0000-0000-000000000001')), '650.00', 'recommended price = hours x rate + costs (no tax surcharge)');
+select t.eq((select taxes_and_reserves::text from public.calculate_job_quote('11111111-0000-0000-0000-000000000001')), '180.00', 'amount to set aside is a share of the profit (30%)');
+select t.eq((select expected_profit::text from public.calculate_job_quote('11111111-0000-0000-0000-000000000001')), '600.00', 'expected profit (before tax) equals hours x hourly rate');
 select t.eq((select effective_hourly_rate::text from public.calculate_job_quote('11111111-0000-0000-0000-000000000001')), '50.00', 'effective hourly rate matches the target');
 select t.eq((select cardinality(missing_settings)::text from public.calculate_job_quote('11111111-0000-0000-0000-000000000001')), '0', 'no missing settings');
 select t.eq((select booked_income::text from public.calculate_job_quote('11111111-0000-0000-0000-000000000001')), '0', 'nothing booked yet');
 
 -- A quoted price replaces the recommendation for profit and hourly rate.
 update public.jobs set quoted_price = 1000 where id = '11111111-0000-0000-0000-000000000001';
-select t.eq((select recommended_price::text from public.calculate_job_quote('11111111-0000-0000-0000-000000000001')), '928.57', 'recommendation stays visible next to a quote');
-select t.eq((select expected_profit::text from public.calculate_job_quote('11111111-0000-0000-0000-000000000001')), '650.00', 'profit from quoted price: 1000 - 50 - 300');
-select t.eq((select effective_hourly_rate::text from public.calculate_job_quote('11111111-0000-0000-0000-000000000001')), '54.17', 'hourly rate from quoted price');
+select t.eq((select recommended_price::text from public.calculate_job_quote('11111111-0000-0000-0000-000000000001')), '650.00', 'recommendation stays visible next to a quote');
+select t.eq((select expected_profit::text from public.calculate_job_quote('11111111-0000-0000-0000-000000000001')), '950.00', 'profit from quoted price: 1000 - 50');
+select t.eq((select effective_hourly_rate::text from public.calculate_job_quote('11111111-0000-0000-0000-000000000001')), '79.17', 'hourly rate from quoted price');
+select t.eq((select taxes_and_reserves::text from public.calculate_job_quote('11111111-0000-0000-0000-000000000001')), '285.00', 'set-aside follows the quoted price profit');
 
 -- Booked income is separate from the quote.
 insert into public.transactions (label, amount, booked_on, job_id)
@@ -34,10 +35,12 @@ insert into public.transactions (label, amount, booked_on, job_id)
 select t.eq((select booked_income::text from public.calculate_job_quote('11111111-0000-0000-0000-000000000001')), '500.00', 'booked income is tracked separately');
 select t.eq((select quoted_price::text from public.calculate_job_quote('11111111-0000-0000-0000-000000000001')), '1000.00', 'quote is not changed by bookings');
 
--- Zero rates are valid and costs are not surcharged.
-update public.user_settings set tax_rate = 0, reserve_rate = 0;
+-- Tax and reserve rates are optional and never change the price.
+update public.user_settings set tax_rate = null, reserve_rate = null;
 update public.jobs set quoted_price = null where id = '11111111-0000-0000-0000-000000000001';
-select t.eq((select recommended_price::text from public.calculate_job_quote('11111111-0000-0000-0000-000000000001')), '650.00', 'without taxes: hours x rate + costs');
+select t.eq((select recommended_price::text from public.calculate_job_quote('11111111-0000-0000-0000-000000000001')), '650.00', 'price is independent of tax and reserve rates');
+select t.eq((select taxes_and_reserves::text from public.calculate_job_quote('11111111-0000-0000-0000-000000000001')), '0.00', 'nothing is set aside without rates');
+select t.eq((select cardinality(missing_settings)::text from public.calculate_job_quote('11111111-0000-0000-0000-000000000001')), '0', 'rates are not required for a price');
 update public.user_settings set tax_rate = 0.20, reserve_rate = 0.10;
 
 -- Zero hours must not divide by zero.
@@ -58,7 +61,7 @@ insert into public.jobs (id, name, start_date, shooting_hours, travel_costs)
 select t.ok((select recommended_price is null and expected_profit is null from public.calculate_job_quote('22222222-0000-0000-0000-000000000001')),
   'no price is invented when settings are missing');
 select t.eq((select array_to_string(missing_settings, ',') from public.calculate_job_quote('22222222-0000-0000-0000-000000000001')),
-  'target_hourly_rate,tax_rate,reserve_rate', 'missing settings are reported');
+  'target_hourly_rate', 'only the hourly rate is required');
 select t.eq((select total_hours::text from public.calculate_job_quote('22222222-0000-0000-0000-000000000001')), '3.00', 'hours and costs are still shown');
 select t.throws($$select * from public.calculate_job_quote('11111111-0000-0000-0000-000000000001')$$, 'P0002', 'cannot calculate another user''s job');
 select t.eq((select count(*)::text from public.jobs), '1', 'jobs are private');

@@ -12,16 +12,29 @@ is German (all texts live in `src/lib/de.ts`).
 | Phase | Area | State |
 |---|---|---|
 | 1-2 | Analysis, architecture, data model | done (`docs/architecture.md`) |
-| 3 | Scaffold, design system, navigation | written, **not built or run yet** (see below) |
-| 4 | Registration and access gate | written, **not built or run yet** |
-| 5 | Migrations, RLS, tests | done and tested against PostgreSQL 16 |
-| 6-12 | Finance UI, dashboard, calendar, jobs, equipment, rentals, settings, PWA polish | not started. The database side of 6, 8, 9, 10 and 11 already exists |
+| 3 | Scaffold, design system, navigation | done, built and run by the owner, CI green |
+| 4 | Registration and access gate | done, works against a real Supabase project |
+| 5 | Migrations, RLS, tests | done. 262 SQL checks plus a concurrency test, run in CI |
+| 6 | Finance: bookings, recurring rules, views, filters | written, **not yet run in a browser** |
+| 7 | Dashboard: budget, monthly balance, chart | written, **not yet run in a browser** |
+| 8 | Calendar on the dashboard: month grid, appointments | written, **not yet run in a browser** |
+| 9 | Job planning: jobs, calculation, monthly-hours warning | written, **not yet run in a browser** |
+| 10 | Equipment: own items, blocks, rental listing switch; income linked to jobs | written, **not yet run in a browser** |
+| 11 | Rental platform: search offers, requests, accept/decline/cancel | written, **not yet run in a browser** |
+| 12 | PWA polish, final tests and docs | not started |
 
-**Honest note:** the front end could not be installed or compiled in the
-environment it was written in (no access to the npm registry). It has never
-been run. Run `npm install && npm run typecheck && npm test && npm run build`
-first and fix whatever the compiler reports. The database layer is the part
-that has been verified (see "Tests").
+**Honest note:** the finance, calendar and job screens and the dashboard were written in an
+environment without access to the npm registry. Their pure logic (amount
+parsing, dates, cent arithmetic, chart scale) has unit tests that pass, and the
+sources were type-checked against hand-written stand-ins for React, Supabase,
+React Query and the router, which only catches mistakes in this project's own
+code. They have never run against the real libraries or in a browser. Run
+`npm run typecheck && npm test && npm run build` first and fix what the real
+compiler reports, then click through the screens.
+
+Migration 9 changes the job calculation. Apply
+`supabase/migrations/20261024000009_quote_pre_tax_rate.sql` in the Supabase SQL
+editor once.
 
 ## Free-only stack
 
@@ -130,13 +143,18 @@ Supabase Auth.
 - `docs/calculation.md` - the job price formula
 - `docs/rentals.md` - reservation rules and concurrency
 
-## Open decisions
+## Decisions and open points
 
-1. Is the target hourly rate a net personal target or a rate before tax?
-   (The current formula treats it as the amount you want to keep before tax
-   and reserve; see `docs/calculation.md`.)
-2. VAT / small-business status is not modelled yet.
-3. Do organisation hours count towards the monthly limit? Currently yes,
-   switchable per user (`org_hours_billable`).
-4. Prices, deposit, hand-over and return of rentals are intentionally not
+Decided:
+
+1. The target hourly rate is a rate **before** tax and reserves. Tax and
+   reserve rates are optional shares of the profit and do not change the price
+   (`docs/calculation.md`).
+2. Small business without VAT: prices contain no VAT.
+3. Organisation hours in the monthly limit are a setting
+   (`org_hours_billable`).
+
+Still open:
+
+1. Prices, deposit, hand-over and return of rentals are intentionally not
    implemented.

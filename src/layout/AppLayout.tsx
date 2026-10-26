@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { Button } from "../components/ui";
+import { useGenerateDueOnStart } from "../features/finance/api";
 import { de } from "../lib/de";
 
 const items = [
@@ -24,6 +26,14 @@ const tabClass = ({ isActive }: { isActive: boolean }) =>
 
 export function AppLayout() {
   const { fullName, signOut } = useAuth();
+
+  // Book everything that became due since the last visit. Safe to repeat: the
+  // database creates each occurrence at most once.
+  const generateDue = useGenerateDueOnStart();
+  useEffect(() => {
+    generateDue.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="min-h-screen md:grid md:grid-cols-[15rem_1fr]">

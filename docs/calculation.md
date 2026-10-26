@@ -1,12 +1,20 @@
 # Job calculation
 
-Implemented in `public.calculate_job_quote(job_id)` (migration 7) and covered by tests.
+Implemented in `public.calculate_job_quote(job_id)` (migrations 7 and 9) and covered by tests.
+
+## Decisions (by the owner)
+
+- The target hourly rate is a rate **before income tax and reserves**.
+- The photographer is a small business owner **without VAT**: prices contain no VAT.
+- Whether organisation hours count towards the monthly limit is a **setting**
+  (`org_hours_billable`, changeable on the settings page).
 
 ## Inputs
 
 - Job: shooting, editing and organisation hours; travel and other costs;
   optional quoted price.
-- Settings: `target_hourly_rate` (w), `tax_rate` (t), `reserve_rate` (r).
+- Settings: `target_hourly_rate` (w, required), `tax_rate` (t, optional),
+  `reserve_rate` (r, optional).
 
 ## Formula
 
@@ -14,33 +22,33 @@ Implemented in `public.calculate_job_quote(job_id)` (migration 7) and covered by
 H = shooting + editing + organisation hours
 K = travel costs + other costs                       internal costs
 
-recommended price = (H * w + K) / (1 - t - r)
+recommended price = H * w + K
 price used        = quoted price, else recommended price
-taxes + reserves  = price used * (t + r)
-expected profit   = price used - K - (taxes + reserves)
+expected profit   = price used - K                   before tax and reserves
 hourly earning    = expected profit / H              (empty when H = 0)
+set aside         = expected profit * (t + r)        information only
 ```
 
-Why this form: taxes and reserves are a share of the price, so they are
-applied exactly once, and costs are never multiplied by a tax surcharge.
-With a recommended price, expected profit equals `H * w` and the hourly
-earning equals the target rate.
+`t` and `r` are shares of the **profit** that the user wants to set aside. They
+do not change the price, so taxes are never counted twice and costs never get a
+surcharge. If they are not configured, nothing is set aside.
 
-Example: H = 12, w = 50, K = 50, t = 0.20, r = 0.10 gives a price of 928.57,
-taxes and reserves of 278.57, profit of 600.00 and 50.00 per hour.
+Example: H = 12, w = 50, K = 50 gives a price of 650.00, profit and hourly
+earning of 600.00 and 50.00 per hour. With t + r = 30 % the amount to set aside
+is 180.00. With a quoted price of 1000.00 the profit is 950.00 (79.17 per hour)
+and the amount to set aside is 285.00.
 
 ## Separation
 
 - internal costs (`K`), the quoted price and income actually booked
   (`transactions.job_id`, positive amounts) are three separate values.
-- If `target_hourly_rate`, `tax_rate` or `reserve_rate` is missing, no price is
-  calculated; the function returns the missing setting names instead.
+- If `target_hourly_rate` is missing, no price is calculated; the function
+  returns the missing setting name instead of an invented number.
 
-## Open decisions
+## Not modelled
 
-- Whether `w` is a net target or a pre-tax rate. Under this formula it is the
-  amount kept after taxes and reserves on the labour part.
-- VAT is not modelled.
+- VAT / small-business turnover threshold. Prices are net = gross.
+- Income tax itself: `t + r` is a planning share, not a tax calculation.
 
 ## Monthly hour limit
 
