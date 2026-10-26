@@ -158,3 +158,17 @@ Still open:
 
 1. Prices, deposit, hand-over and return of rentals are intentionally not
    implemented.
+
+## Publishing (free, GitHub Pages)
+
+The app is a static site; Supabase is the backend. `.github/workflows/deploy.yml`
+builds and publishes it after every push to `main`. One-time setup:
+
+1. GitHub > repository > **Settings > Pages > Source: GitHub Actions**.
+2. **Settings > Secrets and variables > Actions > New repository secret**:
+   `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (same values as in `.env.local`;
+   both are public by design).
+3. Supabase > **Authentication > URL Configuration**: set *Site URL* to
+   `https://<user>.github.io/photofinance/` and add the same address plus `**`
+   under *Redirect URLs*. Without this, links in e-mails lead to the wrong place.
+4. Push to `main`. The address appears in the workflow run and under Settings > Pages.

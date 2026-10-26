@@ -5,6 +5,9 @@ import { Alert, Button, Card, Field } from "../components/ui";
 import { de } from "../lib/de";
 import { supabase } from "../lib/supabase";
 
+/** Where the app lives, with trailing slash (the site root locally, /photofinance/ on GitHub Pages). */
+const appUrl = window.location.origin + import.meta.env.BASE_URL;
+
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function AuthShell({ title, children }: { title: string; children: ReactNode }) {
@@ -79,7 +82,7 @@ export function RegisterPage() {
     setBusy(true);
     const { error: err } = await supabase.auth.signInWithOtp({
       email: email.trim(),
-      options: { shouldCreateUser: true, data: { full_name: fullName.trim() }, emailRedirectTo: window.location.origin },
+      options: { shouldCreateUser: true, data: { full_name: fullName.trim() }, emailRedirectTo: appUrl },
     });
     setBusy(false);
     if (err) setError(de.common.error);
@@ -123,7 +126,7 @@ export function ForgotPasswordPage() {
       return;
     }
     setBusy(true);
-    await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: `${window.location.origin}/passwort-neu` });
+    await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: `${appUrl}passwort-neu` });
     setBusy(false);
     // Same message whether or not the account exists (no account enumeration).
     setSent(true);
